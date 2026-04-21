@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synthera - Gerador de Dados Sintéticos</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #10101a;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding-top: 8vh; /* Adiciona espaço no topo da página */
+            box-sizing: border-box;
+        }
+        .container { 
+            background: rgba(27, 27, 40, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 2rem 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); 
+            width: 100%; 
+            max-width: 500px; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .main-title { /* Nova classe para o título principal */
+            color: #ffffff; 
+            text-align: center;
+            margin-bottom: 0.8rem; /* Espaço entre o título e o tagline */
+            font-weight: 700;
+            font-size: 3.5rem; /* Tamanho maior para o título */
+            letter-spacing: -1px;
+            line-height: 1; /* Ajusta a altura da linha */
+        }
+        .main-tagline { /* Nova classe para o tagline principal */
+            text-align: center;
+            color: #e0e0e0;
+            margin-top: 0;
+            margin-bottom: 4rem; /* Aumenta o espaço para o formulário */
+            font-weight: 400;
+            font-size: 1.1rem; /* Tamanho maior para o tagline */
+        }
+        .tagline {
+            /* Esta classe agora é usada apenas para o estilo original do tagline, se necessário */
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 0.6rem; 
+            color: #94a3b8; /* Tom de cinza azulado */
+            font-size: 0.9rem;
+        }
+        input, select { 
+            width: 100%; 
+            padding: 0.8rem 0.2rem; 
+            border: none;
+            border-bottom: 2px solid #3a3a5a;
+            box-sizing: border-box; 
+            font-size: 1rem;
+            background-color: transparent;
+            color: #e0e0e0;
+            transition: border-color 0.3s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-bottom-color: #9333ea; /* Roxo vibrante */
+        }
+        button { 
+            width: 100%; 
+            padding: 0.9rem; 
+            background: #9333ea; /* Roxo */
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.1rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        button:hover { 
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(147, 51, 234, 0.4);
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Título e tagline movidos para a posição correta, acima do container -->
+    <h1 class="main-title">Synthera</h1>
+    <p class="main-tagline">Simule dados. Treine habilidades.</p>
+
+    <div class="container">
+        <form action="/gerar" method="post">
+            <div class="form-group">
+                <label for="area">Área de Negócio</label>
+                <select id="area" name="area" onchange="updateFormLabels()">
+                    <option value="frotas" selected>Frotas</option>
+                    <option value="rh">Recursos Humanos (RH)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="label_ativos" for="num_ativos">Tamanho da Frota (Nº de Veículos)</label>
+                <input type="number" id="num_ativos" name="num_ativos" value="150" required>
+            </div>
+
+            <div class="form-group" id="group_motoristas">
+                <label for="num_motoristas">Número de Motoristas</label>
+                <input type="number" id="num_motoristas" name="num_motoristas" value="180" required>
+            </div>
+
+            <div class="form-group">
+                <label id="label_historico" for="anos_de_historico">Anos de Histórico</label>
+                <input type="number" id="anos_de_historico" name="anos_de_historico" value="5" required>
+            </div>
+
+            <div class="form-group" id="group_registros">
+                <label for="qtd_registros">Nº de Registros de Manutenção a Gerar</label>
+                <input type="number" id="qtd_registros" name="qtd_registros" value="1000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="nome_arquivo">Nome do Arquivo de Saída</label>
+                <input type="text" id="nome_arquivo" name="nome_arquivo" value="dados_frotas.xlsx" required>
+            </div>
+
+            <button type="submit">Gerar e Baixar Arquivo</button>
+        </form>
+    </div>
+
+    <script>
+        function updateFormLabels() {
+            const area = document.getElementById('area').value;
+            const labelAtivos = document.getElementById('label_ativos');
+            const groupMotoristas = document.getElementById('group_motoristas');
+            const groupRegistros = document.getElementById('group_registros');
+            const labelHistorico = document.getElementById('label_historico');
+            const nomeArquivo = document.getElementById('nome_arquivo');
+
+            if (area === 'rh') {
+                labelAtivos.textContent = 'Número de Funcionários';
+                labelHistorico.textContent = 'Anos de Histórico de Contratações';
+                groupMotoristas.classList.add('hidden');
+                groupRegistros.classList.add('hidden');
+                nomeArquivo.value = 'dados_rh.xlsx';
+            } else { // frotas
+                labelAtivos.textContent = 'Tamanho da Frota (Nº de Veículos)';
+                labelHistorico.textContent = 'Anos de Histórico de Manutenção';
+                groupMotoristas.classList.remove('hidden');
+                groupRegistros.classList.remove('hidden');
+                nomeArquivo.value = 'dados_frotas.xlsx';
+            }
+        }
+        // Garante que os labels estejam corretos ao carregar a página
+        document.addEventListener('DOMContentLoaded', updateFormLabels);
+    </script>
+</body>
+</html>

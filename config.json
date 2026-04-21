@@ -1,0 +1,90 @@
+{
+  "frotas": {
+    "marcas_modelos": {
+      "Volvo": [
+        {"modelo": "FH 540", "tipo": "Caminhão Pesado"}
+      ],
+      "Scania": [
+        {"modelo": "R 450", "tipo": "Caminhão Pesado"}
+      ],
+      "Mercedes-Benz": [
+        {"modelo": "Atego 2426", "tipo": "Caminhão Médio"}
+      ],
+      "Volkswagen": [
+        {"modelo": "Delivery 11.180", "tipo": "Caminhão Leve"},
+        {"modelo": "Saveiro", "tipo": "Carro Utilitário"}
+      ],
+      "Fiat": [
+        {"modelo": "Fiorino", "tipo": "Carro Utilitário"}
+      ],
+      "Chevrolet": [
+        {"modelo": "Montana", "tipo": "Carro Utilitário"}
+      ]
+    },
+    "manutencao": {
+      "categorias": ["Corretiva", "Preventiva", "Revisão"],
+      "pesos_categorias": [0.60, 0.15, 0.25],
+      "detalhes": ["Elétrica", "Pneus", "Troca de Óleo", "Funilaria", "Mecânico", "Freios", "Suspensão"]
+    },
+    "custos": {
+      "Corretiva": [2000.0, 15000.0],
+      "Preventiva": [300.0, 3000.0],
+      "Revisão": [800.0, 6000.0]
+    },
+    "tempo_parado_dias": {
+      "Corretiva": [2, 10],
+      "Outros": [1, 3]
+    },
+    "simulacao": {
+      "km_diario_range": [150, 500]
+    },
+    "custo_multiplicadores": {
+      "Caminhão Pesado": 1.2,
+      "Caminhão Médio": 1.0,
+      "Caminhão Leve": 0.8,
+      "Carro Utilitário": 0.6
+    }
+  },
+  "rh": {
+    "departamentos": ["Vendas", "Marketing", "Tecnologia", "Operações", "Financeiro"],
+    "cargos": {
+      "Vendas": [
+        {"cargo": "Vendedor", "peso": 0.85},
+        {"cargo": "Gerente de Vendas", "peso": 0.15}
+      ],
+      "Marketing": [
+        {"cargo": "Analista de Marketing", "peso": 0.8},
+        {"cargo": "Coordenador de Marketing", "peso": 0.2}
+      ],
+      "Tecnologia": [
+        {"cargo": "Desenvolvedor Jr", "peso": 0.4},
+        {"cargo": "Desenvolvedor Pleno", "peso": 0.3},
+        {"cargo": "Desenvolvedor Sênior", "peso": 0.2},
+        {"cargo": "Engenheiro de Dados", "peso": 0.1}
+      ],
+      "Operações": [
+        {"cargo": "Analista de Logística", "peso": 0.8},
+        {"cargo": "Coordenador de Operações", "peso": 0.2}
+      ],
+      "Financeiro": [
+        {"cargo": "Analista Financeiro", "peso": 0.8},
+        {"cargo": "Controller", "peso": 0.2}
+      ]
+    },
+    "faixas_salariais": {
+      "Vendedor": [2500, 4500],
+      "Gerente de Vendas": [8000, 15000],
+      "Analista de Marketing": [3000, 5000],
+      "Coordenador de Marketing": [6000, 9000],
+      "Desenvolvedor Jr": [3500, 5500],
+      "Desenvolvedor Pleno": [6000, 9000],
+      "Desenvolvedor Sênior": [9000, 14000],
+      "Engenheiro de Dados": [8000, 13000],
+      "Analista de Logística": [3000, 5000],
+      "Coordenador de Operações": [7000, 11000],
+      "Analista Financeiro": [4000, 6500],
+      "Controller": [10000, 18000]
+    },
+    "turnover_chance": 0.15
+  }
+}
