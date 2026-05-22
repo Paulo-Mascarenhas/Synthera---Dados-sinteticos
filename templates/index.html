@@ -91,6 +91,13 @@
             transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(147, 51, 234, 0.4);
         }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+        .checkbox-group input { width: auto; } /* Para o checkbox não ocupar a linha toda */
         .hidden { display: none; }
     </style>
 </head>
@@ -100,33 +107,34 @@
     <p class="main-tagline">Simule dados. Treine habilidades.</p>
 
     <div class="container">
-        <form action="/gerar" method="post">
+        <form id="gerador-form" action="/gerar" method="post">
             <div class="form-group">
                 <label for="area">Área de Negócio</label>
                 <select id="area" name="area" onchange="updateFormLabels()">
                     <option value="frotas" selected>Frotas</option>
                     <option value="rh">Recursos Humanos (RH)</option>
+                    <option value="vendas">Vendas - E-commerce</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label id="label_ativos" for="num_ativos">Tamanho da Frota (Nº de Veículos)</label>
-                <input type="number" id="num_ativos" name="num_ativos" value="150" required>
+                <input type="number" id="num_ativos" name="num_ativos" value="0" required>
             </div>
 
             <div class="form-group" id="group_motoristas">
                 <label for="num_motoristas">Número de Motoristas</label>
-                <input type="number" id="num_motoristas" name="num_motoristas" value="180" required>
+                <input type="number" id="num_motoristas" name="num_motoristas" value="0" required>
             </div>
 
             <div class="form-group">
                 <label id="label_historico" for="anos_de_historico">Anos de Histórico</label>
-                <input type="number" id="anos_de_historico" name="anos_de_historico" value="5" required>
+                <input type="number" id="anos_de_historico" name="anos_de_historico" value="0" required>
             </div>
 
             <div class="form-group" id="group_registros">
                 <label for="qtd_registros">Nº de Registros de Manutenção a Gerar</label>
-                <input type="number" id="qtd_registros" name="qtd_registros" value="1000" required>
+                <input type="number" id="qtd_registros" name="qtd_registros" value="0" required>
             </div>
 
             <div class="form-group">
@@ -134,11 +142,37 @@
                 <input type="text" id="nome_arquivo" name="nome_arquivo" value="dados_frotas.xlsx" required>
             </div>
 
+            <div class="form-group">
+                <label for="output_format">Formato de Saída</label>
+                <select id="output_format" name="output_format" onchange="updateFileNameExtension()">
+                    <option value="xlsx" selected>Excel (.xlsx)</option>
+                    <option value="csv">CSV (.csv)</option>
+                </select>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="simular_etl" name="simular_etl" value="true">
+                <label for="simular_etl">Simular dados para ETL (com inconsistências)</label>
+            </div>
+
             <button type="submit">Gerar e Baixar Arquivo</button>
         </form>
     </div>
 
     <script>
+        function updateFileNameExtension() {
+            const format = document.getElementById('output_format').value;
+            const nomeArquivoInput = document.getElementById('nome_arquivo');
+            let currentName = nomeArquivoInput.value;
+            // Troca a extensão do arquivo de forma segura
+            if (currentName.includes('.')) {
+                let baseName = currentName.substring(0, currentName.lastIndexOf('.'));
+                nomeArquivoInput.value = `${baseName}.${format}`;
+            } else {
+                nomeArquivoInput.value = `${currentName}.${format}`;
+            }
+        }
+
         function updateFormLabels() {
             const area = document.getElementById('area').value;
             const labelAtivos = document.getElementById('label_ativos');
@@ -153,13 +187,23 @@
                 groupMotoristas.classList.add('hidden');
                 groupRegistros.classList.add('hidden');
                 nomeArquivo.value = 'dados_rh.xlsx';
+            } else if (area === 'vendas') {
+                labelAtivos.textContent = 'Número de Vendas a Gerar';
+                labelHistorico.textContent = 'Anos de Histórico de Vendas';
+                document.getElementById('group_motoristas').querySelector('label').textContent = 'Número de Vendedores';
+                groupMotoristas.classList.remove('hidden');
+                groupRegistros.classList.add('hidden');
+                nomeArquivo.value = 'dados_vendas.xlsx';
             } else { // frotas
                 labelAtivos.textContent = 'Tamanho da Frota (Nº de Veículos)';
                 labelHistorico.textContent = 'Anos de Histórico de Manutenção';
+                document.getElementById('group_motoristas').querySelector('label').textContent = 'Número de Motoristas';
                 groupMotoristas.classList.remove('hidden');
                 groupRegistros.classList.remove('hidden');
                 nomeArquivo.value = 'dados_frotas.xlsx';
             }
+            // Garante que a extensão do arquivo corresponda ao formato selecionado
+            updateFileNameExtension();
         }
         // Garante que os labels estejam corretos ao carregar a página
         document.addEventListener('DOMContentLoaded', updateFormLabels);

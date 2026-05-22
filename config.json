@@ -43,6 +43,18 @@
       "Caminhão Médio": 1.0,
       "Caminhão Leve": 0.8,
       "Carro Utilitário": 0.6
+    },
+    "etl_simulation": {
+      "chance_geral": 0.25,
+      "regras": [
+        {"coluna": "Tipo_Manutencao", "tipo_erro": "formato_upper", "chance": 0.15},
+        {"coluna": "Tipo_Manutencao", "tipo_erro": "formato_lower", "chance": 0.15},
+        {"coluna": "Tipo_Manutencao", "tipo_erro": "typo", "chance": 0.20},
+        {"coluna": "Tipo_Manutencao", "tipo_erro": "nulo", "chance": 0.10},
+        {"coluna": "Data_Manutencao", "tipo_erro": "nulo", "chance": 0.15},
+        {"coluna": "Data_Fim_Manutencao", "tipo_erro": "data_inconsistente", "chance": 0.15},
+        {"coluna": "Custo_Manutencao_R$", "tipo_erro": "outlier_multiplicar", "chance": 0.10, "fator": [3, 5]}
+      ]
     }
   },
   "rh": {
@@ -85,6 +97,49 @@
       "Analista Financeiro": [4000, 6500],
       "Controller": [10000, 18000]
     },
-    "turnover_chance": 0.15
+    "turnover_chance": 0.15,
+    "etl_simulation": {
+      "chance_geral": 0.10,
+      "regras": [
+        {"coluna": "Departamento", "tipo_erro": "formato_lower", "chance": 0.6},
+        {"coluna": "Gênero", "tipo_erro": "nulo", "chance": 0.4}
+      ]
+    }
+  },
+  "vendas": {
+    "produtos_por_categoria": {
+      "Eletrônicos": ["Smartphone", "Notebook", "Tablet", "Smart TV", "Fone Bluetooth", "Smartwatch"],
+      "Informática": ["Teclado", "Mouse", "Monitor", "SSD", "HD Externo", "Webcam"],
+      "Eletrodomésticos": ["Geladeira", "Micro-ondas", "Máquina de lavar", "Air fryer", "Liquidificador"],
+      "Moda": ["Camiseta", "Calça Jeans", "Tênis", "Jaqueta", "Vestido"],
+      "Beleza & Cuidados": ["Perfume", "Shampoo", "Creme facial", "Maquiagem", "Protetor solar"],
+      "Casa & Decoração": ["Luminária", "Tapete", "Quadro decorativo", "Almofada", "Cortina"],
+      "Esporte & Fitness": ["Halteres", "Esteira", "Bicicleta ergométrica", "Corda de pular", "Garrafa térmica"]
+    },
+    "faixas_preco_categoria": {
+      "Eletrônicos": [1500, 8000],
+      "Informática": [100, 3000],
+      "Eletrodomésticos": [600, 6000],
+      "Moda": [50, 500],
+      "Beleza & Cuidados": [50, 550],
+      "Casa & Decoração": [80, 1000],
+      "Esporte & Fitness": [30, 2000]
+    },
+    "regioes": ["Sudeste", "Sul", "Nordeste", "Centro-Oeste", "Norte"],
+    "canais_venda": ["Online", "Parceiros"],
+    "formas_pagamento": ["Pix", "Cartão de Crédito", "Boleto"],
+    "status_pedido": ["Entregue", "Cancelado"],
+    "simulacao": {
+      "custo_percentual_sobre_preco": 0.45,
+      "quantidade_range": [1, 15]
+    },
+    "etl_simulation": {
+      "chance_geral": 0.20,
+      "regras": [
+        {"coluna": "Regiao", "tipo_erro": "nulo", "chance": 0.3},
+        {"coluna": "Quantidade", "tipo_erro": "tipo_incorreto_string", "valor": "N/A", "chance": 0.2},
+        {"coluna": "Canal_Venda", "tipo_erro": "formato_upper", "chance": 0.5}
+      ]
+    }
   }
 }

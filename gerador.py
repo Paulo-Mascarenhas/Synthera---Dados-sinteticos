@@ -3,6 +3,7 @@ import pandas as pd
 from faker import Faker
 import random
 import json
+import datetime
 
 # 2. CONFIGURAÇÃO INICIAL
 # Aqui inicializamos o Faker e dizemos a ele para gerar dados no padrão brasileiro.
@@ -22,6 +23,48 @@ def carregar_config():
         return None
 
 config = carregar_config()
+
+def _introduzir_typo(texto: str) -> str:
+    """Introduz um erro de digitação simples trocando dois caracteres adjacentes."""
+    if not isinstance(texto, str) or len(texto) < 2:
+        return texto
+    pos = random.randint(0, len(texto) - 2)
+    # Troca dois caracteres adjacentes de lugar
+    return f"{texto[:pos]}{texto[pos+1]}{texto[pos]}{texto[pos+2:]}"
+
+# 4. FUNÇÃO AUXILIAR PARA ETL
+def _aplicar_erros_etl(linha, config_etl):
+    """Aplica inconsistências em uma linha de dados com base nas regras de configuração."""
+    if random.random() < config_etl.get('chance_geral', 0):
+        regras = config_etl['regras']
+        regras_pesos = [r['chance'] for r in regras]
+        regra_escolhida = random.choices(regras, weights=regras_pesos, k=1)[0]
+
+        coluna = regra_escolhida['coluna']
+        tipo_erro = regra_escolhida['tipo_erro']
+
+        if tipo_erro == 'nulo':
+            linha[coluna] = None
+        elif tipo_erro == 'formato_upper':
+            if isinstance(linha[coluna], str):
+                linha[coluna] = linha[coluna].upper()
+        elif tipo_erro == 'formato_lower':
+            if isinstance(linha[coluna], str):
+                linha[coluna] = linha[coluna].lower()
+        elif tipo_erro == 'outlier_multiplicar':
+            fator = regra_escolhida['fator']
+            linha[coluna] *= random.randint(fator[0], fator[1])
+        elif tipo_erro == 'tipo_incorreto_string':
+            linha[coluna] = regra_escolhida['valor']
+        elif tipo_erro == 'typo':
+            linha[coluna] = _introduzir_typo(linha[coluna])
+        elif tipo_erro == 'data_inconsistente':
+            if 'Data_Manutencao' in linha and isinstance(linha['Data_Manutencao'], (datetime.date, pd.Timestamp)):
+                # Converte para Timestamp para garantir a operação
+                data_inicio_ts = pd.to_datetime(linha['Data_Manutencao'])
+                # Define a data de fim para ANTES da data de início
+                linha[coluna] = data_inicio_ts - pd.Timedelta(days=random.randint(1, 5))
+    return linha
 
 # 3. FUNÇÕES DE GERAÇÃO DE DADOS
 
@@ -55,7 +98,7 @@ def _criar_ativos(num_veiculos, num_motoristas, ano_fim_manut, config_marcas):
         frota.append(veiculo)
     return frota, motoristas
 
-def _gerar_log_eventos(qtd_registros, frota, ano_inicio_manut, ano_fim_manut, config_manut, config_custos, config_tempo_parado, config_multiplicadores):
+def _gerar_log_eventos(qtd_registros, frota, ano_inicio_manut, ano_fim_manut, config_manut, config_custos, config_tempo_parado, config_multiplicadores, simular_etl):
     """Gera uma lista de eventos de manutenção baseada nos ativos."""
     print("   - Gerando log de eventos de manutenção...")
     categorias_manutencao = config_manut['categorias']
@@ -101,7 +144,8 @@ def _gerar_log_eventos(qtd_registros, frota, ano_inicio_manut, ano_fim_manut, co
             # Coluna temporária para cálculo do KM
             'KM_Inicial_Veiculo': veiculo_do_evento['KM_Inicial']
         }
-        log_manutencoes.append(linha_log)
+
+        log_manutencoes.append(_aplicar_erros_etl(linha_log, config['frotas']['etl_simulation']) if simular_etl else linha_log)
     return log_manutencoes
 
 def _processar_dataframe_final(log_manutencoes, ano_inicio_manut, config_simulacao):
@@ -143,7 +187,7 @@ def _processar_dataframe_final(log_manutencoes, ano_inicio_manut, config_simulac
     
     return df[colunas_ordenadas]
 
-def gerar_dados_frotas(qtd_registros, num_veiculos, num_motoristas, ano_inicio_manut, ano_fim_manut):
+def gerar_dados_frotas(qtd_registros, num_veiculos, num_motoristas, ano_inicio_manut, ano_fim_manut, simular_etl=False):
     """
     Orquestra a criação do dataset de log de frotas.
     1. Carrega as configurações.
@@ -167,13 +211,14 @@ def gerar_dados_frotas(qtd_registros, num_veiculos, num_motoristas, ano_inicio_m
         config_frotas['manutencao'], 
         config_frotas['custos'], 
         config_frotas['tempo_parado_dias'], 
-        config_frotas['custo_multiplicadores']
+        config_frotas['custo_multiplicadores'],
+        simular_etl
     )
     # PASSO 3: Pós-processamento e criação do DataFrame
     df_final = _processar_dataframe_final(log_manutencoes, ano_inicio_manut, config_frotas['simulacao'])
     return df_final
 
-def gerar_dados_rh(num_funcionarios, anos_de_historico):
+def gerar_dados_rh(num_funcionarios, anos_de_historico, simular_etl=False):
     """Gera um DataFrame com dados de funcionários para a área de RH."""
     if not config:
         print("Abortando execução devido a erro na configuração.")
@@ -239,8 +284,79 @@ def gerar_dados_rh(num_funcionarios, anos_de_historico):
             'Data_Demissao': data_demissao,
             'Status': status
         }
-        lista_funcionarios.append(funcionario)
+
+        lista_funcionarios.append(_aplicar_erros_etl(funcionario, config['rh']['etl_simulation']) if simular_etl else funcionario)
 
     df_rh = pd.DataFrame(lista_funcionarios)
     print("Geração de dados de RH concluída.")
     return df_rh
+
+def gerar_dados_vendas(num_vendas, num_vendedores, anos_de_historico, simular_etl=False):
+    """Gera um DataFrame com dados de transações de vendas."""
+    if not config:
+        print("Abortando execução devido a erro na configuração.")
+        return None
+
+    print("Iniciando geração de dados de Vendas...")
+    
+    config_vendas = config['vendas']
+    ano_fim = pd.Timestamp.now().year
+    ano_inicio = ano_fim - anos_de_historico + 1
+
+    # 1. Cria uma lista de vendedores e os distribui por região
+    vendedores_por_regiao = {}
+    regioes = config_vendas['regioes']
+    titulos_indesejados = ['Dr. ', 'Dra. ', 'Sr. ', 'Sra. ']
+    num_vendedores_por_regiao = max(1, num_vendedores // len(regioes))
+
+    for regiao in regioes:
+        lista_vendedores_regiao = []
+        while len(lista_vendedores_regiao) < num_vendedores_por_regiao:
+            nome = fake.name()
+            if not any(titulo in nome for titulo in titulos_indesejados):
+                lista_vendedores_regiao.append(nome)
+        vendedores_por_regiao[regiao] = lista_vendedores_regiao
+
+    lista_vendas = []
+    for i in range(num_vendas):
+        # 2. Sorteia a região e, em seguida, um vendedor daquela região
+        regiao_venda = random.choice(regioes)
+        vendedor_da_regiao = random.choice(vendedores_por_regiao[regiao_venda])
+
+        # 3. Sorteia a categoria e o produto de forma coerente
+        categoria_produto = random.choice(list(config_vendas['produtos_por_categoria'].keys()))
+        produto_nome = random.choice(config_vendas['produtos_por_categoria'][categoria_produto])
+        
+        # 2. Gera o preço baseado na faixa da categoria, como solicitado
+        preco_range = config_vendas['faixas_preco_categoria'][categoria_produto]
+        preco_unitario = round(random.uniform(preco_range[0], preco_range[1]), 2)
+        
+        # 4. Simula o custo e a quantidade
+        custo_percentual = config_vendas['simulacao']['custo_percentual_sobre_preco']
+        custo_unitario = round(preco_unitario * custo_percentual, 2)
+        qtd_range = config_vendas['simulacao']['quantidade_range']
+        quantidade = random.randint(qtd_range[0], qtd_range[1])
+
+        # 5. Calcula o custo total (Receita e Lucro não serão incluídos no output)
+        custo_total = custo_unitario * quantidade
+
+        venda = {
+            'Cupom_Fiscal': fake.unique.ean(length=13), # Gera um código de barras único
+            'Data_Venda': fake.date_between(start_date=pd.to_datetime(f'{ano_inicio}-01-01'), end_date=pd.to_datetime(f'{ano_fim}-12-31')),
+            'Vendedor': vendedor_da_regiao,
+            'Regiao': regiao_venda,
+            'Canal_Venda': random.choice(config_vendas['canais_venda']),
+            'Forma_Pagamento': random.choice(config_vendas['formas_pagamento']),
+            'Status_Pedido': random.choice(config_vendas['status_pedido']),
+            'Produto': produto_nome,
+            'Categoria_Produto': categoria_produto,
+            'Preco_Unitario_R$': preco_unitario,
+            'Quantidade': quantidade,
+            'Custo_Total_R$': round(custo_total, 2)
+        }
+
+        lista_vendas.append(_aplicar_erros_etl(venda, config['vendas']['etl_simulation']) if simular_etl else venda)
+
+    df_vendas = pd.DataFrame(lista_vendas)
+    print("Geração de dados de Vendas concluída.")
+    return df_vendas
